@@ -1,0 +1,33 @@
+Neural_Network:
+    vector<int> descriptors //for example {7,5,3} describes an MLP with three hidden layers of size 7, 5 and 3.
+    double*** weights //weights[k,i,j] correspond to the weight between the i-th neuron of the k-th layer and the j-th neuron of the (k+1)-th layer 
+
+    output run(input in)
+    void training(information training_set)
+
+
+Information:
+    int nb_dimmensions_input
+    int nb_dimmensions_output
+    int nb_trainings
+    double[nb_trainings][nb_dimmensions_input] inputs
+    double[nb_trainings][nb_dimmensions_output] outputs
+
+    Information(string input_file, string output_file)
+
+Function:
+    string name
+    double f(double )
+    double df(double )
+
+Descriptor:
+    vector<int> shape //for example {7,5,3} describes an MLP with three hidden layers of size 7, 5 and 3.
+    string input_file 
+    string output_file 
+    function cost_function
+    function activation_function
+
+    Descriptor(string description_file) 
+
+
+    
