@@ -1,5 +1,5 @@
 TARGET := build/main
-EXEC := main
+EXEC := main.out
 
 IDIR := include
 LDIR := lib
