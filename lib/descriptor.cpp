@@ -116,3 +116,11 @@ void Descriptor::print() {
     std::cout << "Input_file: " << input_file << "\n";
     std::cout << "Output_file: " << output_file << "\n";
 }
+
+const std::string Descriptor::get_input_file() const {
+    return input_file;
+}
+
+const std::string Descriptor::get_output_file() const {
+    return output_file;
+}

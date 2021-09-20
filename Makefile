@@ -1,5 +1,5 @@
 TARGET := build/main
-EXEC := main.out
+EXEC := neural
 
 IDIR := include
 LDIR := lib

@@ -26,12 +26,10 @@ class Descriptor {
         Descriptor(std::string descriptor_file);
         void print();
 
-        int get_depth();
-        int* get_shape();
-        std::string get_input_file();
-        std::string get_output_file();
-        Function* get_cost_function();
-        Function* get_activation_functio();
+        const std::string get_input_file() const;
+        const std::string get_output_file() const;
+        //Function* get_cost_function();
+        //Function* get_activation_functio();
 
 
 };
