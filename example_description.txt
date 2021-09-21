@@ -1,0 +1,3 @@
+INPUT_FILE = some_training.csv
+OUTPUT_FILE = some_outputs.csv
+SHAPE = 4, 2

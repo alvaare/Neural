@@ -21,7 +21,8 @@ Function:
     double df(double )
 
 Descriptor:
-    vector<int> shape //for example {7,5,3} describes an MLP with three hidden layers of size 7, 5 and 3.
+    int depth
+    int[depth] shape //for example {7,5,3} describes an MLP with three hidden layers of size 7, 5 and 3.
     string input_file 
     string output_file 
     function cost_function
