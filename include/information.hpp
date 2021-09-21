@@ -22,6 +22,7 @@ class Information {
 
     public:
         Information(Descriptor&);
-
         void print();
+
+        const Dimmensions& get_dimmensions() const;
 };

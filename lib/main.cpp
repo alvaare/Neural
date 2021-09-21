@@ -6,5 +6,6 @@
 int main(int argc, char* argv[]) {
     Descriptor desc(argv[1]);
     Information info(desc);
-    info.print();
+    Neural_network nn(desc, info);
+    nn.print();
 }

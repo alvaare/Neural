@@ -2,7 +2,7 @@
 #include <iostream>
 #include "information.hpp"
 
-int get_dimmension(std::string file) {
+static int get_dimmension(std::string file) {
     std::string line;
     std::ifstream myfile (file);
     int dimmension = 0;
@@ -15,7 +15,7 @@ int get_dimmension(std::string file) {
     return dimmension+1;
 }
 
-int get_nb_lines(std::string file) {
+static int get_nb_lines(std::string file) {
     std::string line;
     std::ifstream myfile (file);
     int nb_lines = 0;
@@ -61,4 +61,8 @@ void Information::print() {
     inputs.print();
     std::cout << "Outputs:\n";
     outputs.print();
+}
+
+const Dimmensions& Information::get_dimmensions() const {
+    return dimmensions;
 }
