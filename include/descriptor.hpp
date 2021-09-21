@@ -11,6 +11,10 @@ class Shape {
         Shape();
         Shape(std::string);
         void print();
+
+        int* get_shape() const;
+        int get_depth() const;
+        int get_size_layer(int) const;
 };
 
 class Descriptor {
@@ -24,12 +28,13 @@ class Descriptor {
 
     public:
         Descriptor(std::string descriptor_file);
+        ~Descriptor();
         void print();
 
         const std::string get_input_file() const;
         const std::string get_output_file() const;
         //Function* get_cost_function();
         //Function* get_activation_functio();
-
+        const Shape& get_shape() const;
 
 };

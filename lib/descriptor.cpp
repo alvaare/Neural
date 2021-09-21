@@ -10,14 +10,14 @@ enum tokens {
     ERROR
 };
 
-tokens resolve_token(std::string token) {
+static tokens resolve_token(std::string token) {
     if (token == "INPUT_FILE") return INPUT_LINE;
     if (token == "OUTPUT_FILE") return OUTPUT_LINE;
     if (token == "SHAPE") return SHAPE;
     return ERROR;
 }
 
-tokens get_token(std::string line) {
+static tokens get_token(std::string line) {
     std::string token;
     for (char c : line) {
         if (c == ' ') {
@@ -28,7 +28,7 @@ tokens get_token(std::string line) {
     return ERROR;
 }
 
-std::string get_description(std::string line) {
+static std::string get_description(std::string line) {
     for (int i = 0; i < (int)line.length(); i++) {
         if (line[i] == '=') {
             return line.substr(i+2, line.length()-(i+2));
@@ -37,7 +37,7 @@ std::string get_description(std::string line) {
     throw ("There is no '=' in:\n" + line);
 }
 
-int nb_commas(std::string description) {
+static int nb_commas(std::string description) {
     int res = 0;
     for (char c : description) {
         if (c == ',') {
@@ -47,7 +47,7 @@ int nb_commas(std::string description) {
     return res;
 }
 
-void fill_shape(int* shape, std::string shape_description, int depth) {
+static void fill_shape(int* shape, std::string shape_description, int depth) {
     std::string nb_neurons;
     int id_layer = 0;
     for (char c : shape_description) {
@@ -87,6 +87,18 @@ void Shape::print() {
     std::cout << "\n";
 }
 
+int* Shape::get_shape() const {
+    return shape;
+}
+
+int Shape::get_depth() const {
+    return depth;
+}
+
+int Shape::get_size_layer(int id_layer) const {
+    return shape[id_layer];
+}
+
 Descriptor::Descriptor(std::string descriptor_file) {
     std::string line;
     std::ifstream myfile (descriptor_file);
@@ -117,6 +129,10 @@ void Descriptor::print() {
     std::cout << "Output_file: " << output_file << "\n";
 }
 
+Descriptor::~Descriptor() {
+    delete [] shape.get_shape();
+}
+
 const std::string Descriptor::get_input_file() const {
     return input_file;
 }
@@ -124,3 +140,8 @@ const std::string Descriptor::get_input_file() const {
 const std::string Descriptor::get_output_file() const {
     return output_file;
 }
+
+const Shape& Descriptor::get_shape() const {
+    return shape;
+}
+
