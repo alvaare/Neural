@@ -125,17 +125,7 @@ static int get_nb_parents(int id_layer, const Shape& shape, int nb_input_nodes) 
     return shape.get_size_layer(id_layer-1);
 }
 
-Neural_network::Neural_network(const Descriptor& desc, const Information& info) {
-    const Shape& shape = desc.get_shape();
-    const Dimmensions& dimmensions = info.get_dimmensions();
-    nb_input_nodes = dimmensions.get_dimmension_input();
-    nb_hidden_nodes = compute_nb_hidden_nodes(shape);
-    nb_output_nodes = dimmensions.get_dimmension_output();
-    
-    input_nodes = new Input_Node[nb_input_nodes];
-    hidden_nodes = new Hidden_Node[nb_hidden_nodes];
-    output_nodes = new Output_Node[nb_output_nodes];
-
+static void construct_input_nodes(const Shape& shape, int nb_input_nodes, Input_Node* input_nodes) {
     int nb_childs = shape.get_size_layer(0);
     for (int id_input_node = 0; id_input_node < nb_input_nodes; id_input_node++) {
         input_nodes[id_input_node].set_childs(nb_childs, nb_input_nodes);
@@ -144,10 +134,11 @@ Neural_network::Neural_network(const Descriptor& desc, const Information& info) 
     int nb_parents = shape.get_size_layer(shape.get_depth()-1);
     for (int id_output_node = 0; id_output_node < nb_output_nodes; id_output_node++) {
         output_nodes[id_output_node].set_parents(nb_parents, nb_hidden_nodes - nb_parents + nb_input_nodes);
-    }
+}
 
-    int nb_visited_nodes = nb_input_nodes;
-
+static void construct_hidden_nodes(const Shape& shape, int nb_input_nodes, int nb_output_nodes, Hidden_Node* hidden_nodes) {
+    int nb_childs, nb_parents, nb_visited_nodes;
+    nb_visited_nodes = nb_input_nodes;
     for (int id_layer = 0; id_layer < shape.get_depth(); id_layer++) {
         nb_childs = get_nb_childs(id_layer, shape, nb_output_nodes);
         nb_parents = get_nb_parents(id_layer, shape, nb_input_nodes);
@@ -159,6 +150,30 @@ Neural_network::Neural_network(const Descriptor& desc, const Information& info) 
         }
         nb_visited_nodes = last_id;
     }
+}
+
+static void construct_output_nodes(const Shape& shape, int nb_output_nodes, int nb_visited_nodes, Output_Node* output_nodes) {
+    int nb_parents = shape.get_size_layer(shape.get_depth()-1);
+    for (int id_output_node = 0; id_output_node < nb_output_nodes; id_output_node++) {
+        output_nodes[id_output_node].set_parents(nb_parents, nb_visited_nodes - nb_parents);
+    }
+}
+
+Neural_network::Neural_network(const Descriptor& desc, const Information& info) {
+    const Shape& shape = desc.get_shape();
+    const Dimmensions& dimmensions = info.get_dimmensions();
+    
+    nb_input_nodes = dimmensions.get_dimmension_input();
+    nb_hidden_nodes = compute_nb_hidden_nodes(shape);
+    nb_output_nodes = dimmensions.get_dimmension_output();
+    
+    input_nodes = new Input_Node[nb_input_nodes];
+    hidden_nodes = new Hidden_Node[nb_hidden_nodes];
+    output_nodes = new Output_Node[nb_output_nodes];
+
+    construct_input_nodes(shape, nb_input_nodes, input_nodes);
+    construct_hidden_nodes(shape, nb_input_nodes, nb_output_nodes, hidden_nodes);
+    construct_output_nodes(shape, nb_output_nodes, nb_input_nodes+nb_hidden_nodes, output_nodes);
 }
 
 Neural_network::~Neural_network() {
