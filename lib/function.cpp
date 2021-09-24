@@ -20,9 +20,13 @@ Function::Function(functions f_token) {
     }
 }
 
+Function::Function() : Function(RELU) {}
+
 double Function::f(double x) {
     switch(id) {
         case RELU :
+            return Relu(x);
+        default:
             return Relu(x);
     }
 }
@@ -30,6 +34,8 @@ double Function::f(double x) {
 double Function::df(double x) {
     switch(id) {
         case RELU :
+            return dRelu(x);
+        default:
             return dRelu(x);
     }
 }
