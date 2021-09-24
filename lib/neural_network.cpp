@@ -1,5 +1,6 @@
 #include <iostream>
 #include "neural_network.hpp"
+#include "run.hpp"
 
 static double my_rand() {
     return ((double) rand() / (RAND_MAX));
@@ -14,10 +15,19 @@ Node::Node() {
 
 void Node::print() const {
     std::cout << "id: " << id << "\n";
+    std::cout << "output: " << output << "\n";
 }
 
 int Node::get_id() const {
     return id;
+}
+
+double Node::get_output() const {
+    return output;
+}
+
+void Node::compute_output() const {
+    std::cout << "Computing output of a non-specified node, unknown behaviour.\n";
 }
 
 Input_Node::Input_Node() : Node() {
@@ -37,6 +47,14 @@ void Input_Node::print() const {
     }
 }
 
+int Input_Node::get_nb_childs() const {
+    return nb_childs;
+}
+
+Edge* Input_Node::get_childs() const {
+    return child_edges;
+}
+
 void Input_Node::set_childs(int nb_childs, int start) {
     this->nb_childs = nb_childs;
     child_edges = new Edge[nb_childs];
@@ -45,8 +63,64 @@ void Input_Node::set_childs(int nb_childs, int start) {
     }
 } 
 
+void Input_Node::set_output(double o) {
+    this->output = o;
+}
+
+void Input_Node::compute_output() const {
+    
+}
+
+Output_Node::Output_Node() : Node() {
+    parents = NULL;
+    activation = 0;
+} 
+
+Output_Node::~Output_Node() {
+    delete [] parents;
+}
+
+void Output_Node::print() const {
+    std::cout << "This is an output node.\n";
+    Node::print();
+    std::cout << "Here are the parents of the node:\n";
+    for (int id_parent = 0; id_parent < nb_parents; id_parent++) {
+        std::cout << parents[id_parent] << " ";
+    }
+    std::cout << "\n";
+}
+
+int Output_Node::get_nb_parents() const {
+    return nb_parents;
+}
+
+void Output_Node::set_parents(int nb_parents, int start) {
+    this->nb_parents = nb_parents;
+    parents = new int[nb_parents];
+    for (int id_parent = 0; id_parent < nb_parents; id_parent++) {
+        parents[id_parent] = start+id_parent;
+    }
+}
+
+void Output_Node::set_activation_0() {
+    activation = 0;
+}
+
+void Output_Node::increase_activation(double incr) {
+    activation += incr;
+}
+
+void Output_Node::compute_output() {
+    output = activation;
+}
+
 Hidden_Node::Hidden_Node() : Input_Node(), Output_Node() {
     bias = my_rand();
+    activation_function = Function(RELU);
+}
+
+Hidden_Node::Hidden_Node(functions f) : Hidden_Node() {
+    activation_function = Function(RELU);
 }
 
 void Hidden_Node::print() const {
@@ -64,30 +138,9 @@ void Hidden_Node::print() const {
     std::cout << "\n";
 }
 
-Output_Node::Output_Node() : Node() {
-    parents = NULL;
-} 
-
-Output_Node::~Output_Node() {
-    delete [] parents;
-}
-
-void Output_Node::print() const {
-    std::cout << "This is an output node.\n";
-    Node::print();
-    std::cout << "Here are the parents of the node:\n";
-    for (int id_parent = 0; id_parent < nb_parents; id_parent++) {
-        std::cout << parents[id_parent] << " ";
-    }
-    std::cout << "\n";
-}
-
-void Output_Node::set_parents(int nb_parents, int start) {
-    this->nb_parents = nb_parents;
-    parents = new int[nb_parents];
-    for (int id_parent = 0; id_parent < nb_parents; id_parent++) {
-        parents[id_parent] = start+id_parent;
-    }
+void Hidden_Node::compute_output() {
+    Output_Node::compute_output();
+    output = activation_function.f(output+bias);
 }
 
 Edge::Edge(int n) {
@@ -98,7 +151,23 @@ Edge::Edge(int n) {
 Edge::Edge() = default;
 
 void Edge::print() const {
-    std::cout << "id: " << id_out << " weight: " << weight << "\n";
+    std::cout << "id: " << id_out << " weight: " << weight << " output: " << output << "\n";
+}
+
+int Edge::get_id_out() const {
+    return id_out;
+}
+
+double Edge::get_weight() const {
+    return weight;
+}
+
+double Edge::get_output() const {
+    return output;
+}
+
+void Edge::compute_output(double in) {
+    output = in*weight;
 }
 
 static int compute_nb_hidden_nodes(const Shape& shape) {
@@ -130,10 +199,6 @@ static void construct_input_nodes(const Shape& shape, int nb_input_nodes, Input_
     for (int id_input_node = 0; id_input_node < nb_input_nodes; id_input_node++) {
         input_nodes[id_input_node].set_childs(nb_childs, nb_input_nodes);
     }
-
-    int nb_parents = shape.get_size_layer(shape.get_depth()-1);
-    for (int id_output_node = 0; id_output_node < nb_output_nodes; id_output_node++) {
-        output_nodes[id_output_node].set_parents(nb_parents, nb_hidden_nodes - nb_parents + nb_input_nodes);
 }
 
 static void construct_hidden_nodes(const Shape& shape, int nb_input_nodes, int nb_output_nodes, Hidden_Node* hidden_nodes) {
@@ -162,7 +227,7 @@ static void construct_output_nodes(const Shape& shape, int nb_output_nodes, int 
 Neural_network::Neural_network(const Descriptor& desc, const Information& info) {
     const Shape& shape = desc.get_shape();
     const Dimmensions& dimmensions = info.get_dimmensions();
-    
+
     nb_input_nodes = dimmensions.get_dimmension_input();
     nb_hidden_nodes = compute_nb_hidden_nodes(shape);
     nb_output_nodes = dimmensions.get_dimmension_output();
@@ -192,4 +257,95 @@ void Neural_network::print() const {
     for (int id = 0; id < nb_output_nodes; id++) {
         output_nodes[id].print();
     }
+}
+
+int Neural_network::get_nb_input_nodes() const {
+    return nb_input_nodes;
+}
+
+int Neural_network::get_nb_nodes() const {
+    return nb_hidden_nodes + nb_input_nodes + nb_output_nodes;
+}
+
+Input_Node* Neural_network::get_input_nodes() const {
+    return input_nodes;
+}
+
+Output_Node& Neural_network::get_output_node(int id) const {
+    if (id < nb_input_nodes + nb_hidden_nodes) {
+        return hidden_nodes[id-nb_input_nodes];
+    }
+    else    
+        return output_nodes[id-nb_input_nodes-nb_hidden_nodes];
+}
+
+node_type Neural_network::get_type(int id_node) const {
+    if (id_node < nb_input_nodes) {
+        return INPUT_NODE;
+    }
+    if (id_node < nb_input_nodes + nb_hidden_nodes) {
+        return HIDDEN_NODE;
+    }
+    if (id_node < get_nb_nodes()) {
+        return OUTPUT_NODE;
+    }
+    return NODE;
+}
+
+Node& Neural_network::get_node(int id_node) const {
+    switch (get_type(id_node)) {
+    case INPUT_NODE:
+        return input_nodes[id_node];
+    case HIDDEN_NODE:
+        return hidden_nodes[id_node-nb_input_nodes];
+    case OUTPUT_NODE:
+        return output_nodes[id_node-nb_input_nodes-nb_hidden_nodes];
+    default:
+        std::cout << "Id_node non existant\n";
+        return input_nodes[0];
+    }
+}
+
+void Neural_network::set_activation_0() {
+    for (int id_hidden_node = 0; id_hidden_node < nb_hidden_nodes; id_hidden_node++) {
+        hidden_nodes[id_hidden_node].set_activation_0();
+    }
+    for (int id_output_node = 0; id_output_node < nb_output_nodes; id_output_node++) {
+        output_nodes[id_output_node].set_activation_0();
+    }
+}
+
+void Neural_network::compute_node_output(int id_node) const {
+    Node* node = &get_node(id_node);
+    Input_Node* i_node;
+    Hidden_Node* h_node;
+    Output_Node* o_node;
+    switch (get_type(id_node)) {
+        case INPUT_NODE:
+            i_node = dynamic_cast<Input_Node*>(node);
+            i_node->compute_output();
+            break;
+        case HIDDEN_NODE:
+            h_node = dynamic_cast<Hidden_Node*>(node);
+            h_node->compute_output();        
+            break;
+        case OUTPUT_NODE:
+            o_node = dynamic_cast<Output_Node*>(node);
+            o_node->compute_output();
+            break;
+        case NODE:
+            break;
+    }
+}
+
+void Neural_network::print_output() const {
+    for (int id_output = 0; id_output < nb_output_nodes; id_output++) {
+        std::cout << output_nodes[id_output].get_output() << " ";
+    }
+    std::cout << "\n";
+}
+
+void Neural_network::run() {
+    Running_state rs(this);
+    rs.run();
 }
