@@ -9,6 +9,7 @@ static double my_rand() {
 int Node::nb_nodes = 0;
 
 Node::Node() {
+    output = 0;
     id = nb_nodes;
     nb_nodes++;
 }
@@ -73,6 +74,7 @@ void Input_Node::compute_output() const {
 
 Output_Node::Output_Node() : Node() {
     parents = NULL;
+    bias = my_rand();
     activation = 0;
 } 
 
@@ -115,7 +117,6 @@ void Output_Node::compute_output() {
 }
 
 Hidden_Node::Hidden_Node() : Input_Node(), Output_Node() {
-    bias = my_rand();
     activation_function = Function(RELU);
 }
 

@@ -26,6 +26,11 @@ Running_state::Running_state(Neural_network* nn) {
     }
 }
 
+Running_state::~Running_state() {
+    delete [] nodes_left_to_activate;
+    delete [] visited;
+}
+
 static void print_queue(std::queue<int> q) {
 	while (!q.empty()){
 		std::cout << q.front() << " ";

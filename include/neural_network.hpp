@@ -48,6 +48,7 @@ class Input_Node : virtual public Node {
 class Output_Node : virtual public Node {
     protected:
         double activation;
+        double bias;
         int nb_parents;
         int* parents;
     public: 
@@ -67,7 +68,6 @@ class Output_Node : virtual public Node {
 
 class Hidden_Node : public Input_Node, public Output_Node {
     private:
-        double bias;
         Function activation_function;
     public:
         Hidden_Node();

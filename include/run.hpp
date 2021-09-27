@@ -13,6 +13,7 @@ class Running_state {
         void scan_node(int);
     public:
         Running_state(Neural_network*);
+        ~Running_state();
         void print() const;
 
         void run();
