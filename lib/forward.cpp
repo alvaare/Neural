@@ -1,5 +1,5 @@
 #include <iostream>
-#include "run.hpp"
+#include "forward.hpp"
 
 void Running_state::fill_active_nodes_with_input_nodes() {
     Input_Node* input_nodes = nn->get_input_nodes();

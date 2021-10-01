@@ -1,6 +1,6 @@
 #include <iostream>
 #include "neural_network.hpp"
-#include "run.hpp"
+#include "forward.hpp"
 
 static double my_rand() {
     return ((double) rand() / (RAND_MAX));
