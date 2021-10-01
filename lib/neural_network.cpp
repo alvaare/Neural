@@ -56,11 +56,11 @@ Edge* Input_Node::get_childs() const {
     return child_edges;
 }
 
-void Input_Node::set_childs(int nb_childs, int start) {
+void Input_Node::set_childs(Neural_network& nn, int nb_childs, int start) {
     this->nb_childs = nb_childs;
     child_edges = new Edge[nb_childs];
     for (int id_child = 0; id_child < nb_childs; id_child++) {
-        child_edges[id_child] = Edge(start+id_child);
+        child_edges[id_child] = Edge(dynamic_cast<Output_Node*>(&nn.get_node(start+id_child)));
     }
 } 
 
@@ -76,6 +76,7 @@ Output_Node::Output_Node() : Node() {
     parents = NULL;
     bias = my_rand();
     activation = 0;
+    local_gradient = 0;
 } 
 
 Output_Node::~Output_Node() {
@@ -94,6 +95,10 @@ void Output_Node::print() const {
 
 int Output_Node::get_nb_parents() const {
     return nb_parents;
+}
+
+double Output_Node::get_local_gradient() const {
+    return local_gradient;
 }
 
 void Output_Node::set_parents(int nb_parents, int start) {
@@ -144,19 +149,20 @@ void Hidden_Node::compute_output() {
     output = activation_function.f(output+bias);
 }
 
-Edge::Edge(int n) {
-    id_out = n;
+Edge::Edge(Output_Node* n) {
+    out_node = n;
     weight = my_rand();
+    local_gradient = 0;
 }
 
 Edge::Edge() = default;
 
 void Edge::print() const {
-    std::cout << "id: " << id_out << " weight: " << weight << " output: " << output << "\n";
+    std::cout << "id: " << out_node->get_id() << " weight: " << weight << " output: " << output << "\n";
 }
 
 int Edge::get_id_out() const {
-    return id_out;
+    return out_node->get_id();
 }
 
 double Edge::get_weight() const {
@@ -169,6 +175,10 @@ double Edge::get_output() const {
 
 void Edge::compute_output(double in) {
     output = in*weight;
+}
+
+void Edge::compute_gradient(double activation) {
+    local_gradient = activation * out_node->get_local_gradient();
 }
 
 static int compute_nb_hidden_nodes(const Shape& shape) {
@@ -195,14 +205,14 @@ static int get_nb_parents(int id_layer, const Shape& shape, int nb_input_nodes) 
     return shape.get_size_layer(id_layer-1);
 }
 
-static void construct_input_nodes(const Shape& shape, int nb_input_nodes, Input_Node* input_nodes) {
+void Neural_network::construct_input_nodes(const Shape& shape, int nb_input_nodes) {
     int nb_childs = shape.get_size_layer(0);
     for (int id_input_node = 0; id_input_node < nb_input_nodes; id_input_node++) {
-        input_nodes[id_input_node].set_childs(nb_childs, nb_input_nodes);
+        input_nodes[id_input_node].set_childs(*this, nb_childs, nb_input_nodes);
     }
 }
 
-static void construct_hidden_nodes(const Shape& shape, int nb_input_nodes, int nb_output_nodes, Hidden_Node* hidden_nodes) {
+void Neural_network::construct_hidden_nodes(const Shape& shape, int nb_input_nodes, int nb_output_nodes) {
     int nb_childs, nb_parents, nb_visited_nodes;
     nb_visited_nodes = nb_input_nodes;
     for (int id_layer = 0; id_layer < shape.get_depth(); id_layer++) {
@@ -211,7 +221,7 @@ static void construct_hidden_nodes(const Shape& shape, int nb_input_nodes, int n
         int last_id = nb_visited_nodes + shape.get_size_layer(id_layer);
         int first_id = nb_visited_nodes - nb_parents;
         for (int id_hidden_node = nb_visited_nodes-nb_input_nodes; id_hidden_node < last_id-nb_input_nodes; id_hidden_node++) {
-            hidden_nodes[id_hidden_node].set_childs(nb_childs, last_id);
+            hidden_nodes[id_hidden_node].set_childs(*this, nb_childs, last_id);
             hidden_nodes[id_hidden_node].set_parents(nb_parents, first_id);
         }
         nb_visited_nodes = last_id;
@@ -237,8 +247,8 @@ Neural_network::Neural_network(const Descriptor& desc, const Information& info) 
     hidden_nodes = new Hidden_Node[nb_hidden_nodes];
     output_nodes = new Output_Node[nb_output_nodes];
 
-    construct_input_nodes(shape, nb_input_nodes, input_nodes);
-    construct_hidden_nodes(shape, nb_input_nodes, nb_output_nodes, hidden_nodes);
+    construct_input_nodes(shape, nb_input_nodes);
+    construct_hidden_nodes(shape, nb_input_nodes, nb_output_nodes);
     construct_output_nodes(shape, nb_output_nodes, nb_input_nodes+nb_hidden_nodes, output_nodes);
 }
 

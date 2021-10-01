@@ -10,6 +10,8 @@ enum node_type {
     HIDDEN_NODE
 };
 
+class Neural_network;
+
 class Node {
     protected:
         int id;
@@ -39,7 +41,7 @@ class Input_Node : virtual public Node {
         int get_nb_childs() const;
         Edge* get_childs() const;
 
-        void set_childs(int, int);
+        void set_childs(Neural_network&, int, int);
         void set_output(double);
 
         void compute_output() const;
@@ -51,18 +53,20 @@ class Output_Node : virtual public Node {
         double bias;
         int nb_parents;
         int* parents;
+        double local_gradient;
     public: 
         Output_Node();
         ~Output_Node();
         void print() const;
 
         int get_nb_parents() const;
+        double get_activation() const;
+        double get_local_gradient() const;
 
         void set_parents(int, int);
         void set_activation_0();
         void increase_activation(double);
 
-        double get_activation() const;
         void compute_output();
 };
 
@@ -79,11 +83,12 @@ class Hidden_Node : public Input_Node, public Output_Node {
 
 class Edge {
     private:
-        int id_out;
+        Output_Node* out_node;
         double weight;
         double output;
+        double local_gradient;
     public:
-        Edge(int);
+        Edge(Output_Node*);
         Edge();
         void print() const;
 
@@ -92,6 +97,7 @@ class Edge {
         double get_output() const;
 
         void compute_output(double);
+        void compute_gradient(double);
 };
 
 class Neural_network {
@@ -115,6 +121,8 @@ class Neural_network {
         node_type get_type(int) const;
         Node& get_node(int) const;
 
+        void construct_input_nodes(const Shape&,  int);
+        void construct_hidden_nodes(const Shape&, int, int);
         void set_activation_0();
         void compute_node_output(int) const;
         void print_output() const;
