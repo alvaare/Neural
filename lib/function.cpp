@@ -6,7 +6,7 @@ double Relu(double x) {
 }
 
 double dRelu(double x) {
-    return (x > 0)? 1 : 0;
+    return (x > 0)? x : 0;
 }
 
 Function::Function(functions f_token) {

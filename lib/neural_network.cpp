@@ -1,6 +1,7 @@
 #include <iostream>
 #include "neural_network.hpp"
 #include "forward.hpp"
+#include "backpropagation.hpp"
 
 static double my_rand() {
     return ((double) rand() / (RAND_MAX));
@@ -33,6 +34,7 @@ void Node::compute_output() const {
 
 Input_Node::Input_Node() : Node() {
     child_edges = NULL;
+    nb_childs = 0;
 }
 
 Input_Node::~Input_Node() {
@@ -68,10 +70,6 @@ void Input_Node::set_output(double o) {
     this->output = o;
 }
 
-void Input_Node::compute_output() const {
-    
-}
-
 Output_Node::Output_Node() : Node() {
     parents = NULL;
     bias = my_rand();
@@ -97,6 +95,14 @@ int Output_Node::get_nb_parents() const {
     return nb_parents;
 }
 
+double Output_Node::get_bias() const {
+    return bias;
+}
+
+double Output_Node::get_activation() const {
+    return activation;
+}
+
 double Output_Node::get_local_gradient() const {
     return local_gradient;
 }
@@ -113,12 +119,20 @@ void Output_Node::set_activation_0() {
     activation = 0;
 }
 
+void Output_Node::set_gradient_0() {
+    local_gradient = 0;
+}
+
 void Output_Node::increase_activation(double incr) {
     activation += incr;
 }
 
 void Output_Node::compute_output() {
     output = activation;
+}
+
+void Output_Node::compute_gradient() {
+    
 }
 
 Hidden_Node::Hidden_Node() : Input_Node(), Output_Node() {
@@ -133,6 +147,7 @@ void Hidden_Node::print() const {
     Node::print();
     std::cout << "This is a hidden node.\n";
     std::cout << "bias: " << bias << "\n";
+    std::cout << "activation: " << activation << "\n";
     std::cout << "Here are the childs of the node:\n";
     for (int id_child = 0; id_child < nb_childs; id_child++) {
         child_edges[id_child].print();
@@ -145,14 +160,18 @@ void Hidden_Node::print() const {
 }
 
 void Hidden_Node::compute_output() {
-    Output_Node::compute_output();
-    output = activation_function.f(output+bias);
+    output = activation_function.f(activation+bias);
+}
+
+void Hidden_Node::compute_gradient() {
+
 }
 
 Edge::Edge(Output_Node* n) {
     out_node = n;
     weight = my_rand();
     local_gradient = 0;
+    output = 0;
 }
 
 Edge::Edge() = default;
@@ -274,12 +293,26 @@ int Neural_network::get_nb_input_nodes() const {
     return nb_input_nodes;
 }
 
+int Neural_network::get_nb_output_nodes() const {
+    return nb_output_nodes;
+}
+
 int Neural_network::get_nb_nodes() const {
     return nb_hidden_nodes + nb_input_nodes + nb_output_nodes;
 }
 
 Input_Node* Neural_network::get_input_nodes() const {
     return input_nodes;
+}
+
+Input_Node& Neural_network::get_input_node(int id) const {
+    if (id < nb_input_nodes)
+        return input_nodes[id];
+    return hidden_nodes[id-nb_input_nodes];
+}
+
+Output_Node* Neural_network::get_output_nodes() const {
+    return output_nodes;
 }
 
 Output_Node& Neural_network::get_output_node(int id) const {
@@ -326,25 +359,53 @@ void Neural_network::set_activation_0() {
     }
 }
 
-void Neural_network::compute_node_output(int id_node) const {
+void Neural_network::set_gradient_0() {
+    for (int id_hidden_node = 0; id_hidden_node < nb_hidden_nodes; id_hidden_node++) {
+        hidden_nodes[id_hidden_node].set_gradient_0();
+    }
+    for (int id_output_node = 0; id_output_node < nb_output_nodes; id_output_node++) {
+        output_nodes[id_output_node].set_gradient_0();
+    }
+}
+
+void Neural_network::set_input(double inputs[]) {
+    for (int id_input = 0; id_input < nb_input_nodes; id_input++) {
+        input_nodes[id_input].set_output(inputs[id_input]);
+    }
+}
+
+void Neural_network::compute_node_output(int id_node) {
     Node* node = &get_node(id_node);
-    Input_Node* i_node;
     Hidden_Node* h_node;
     Output_Node* o_node;
     switch (get_type(id_node)) {
-        case INPUT_NODE:
-            i_node = dynamic_cast<Input_Node*>(node);
-            i_node->compute_output();
-            break;
         case HIDDEN_NODE:
             h_node = dynamic_cast<Hidden_Node*>(node);
-            h_node->compute_output();        
+            h_node->compute_output();
             break;
         case OUTPUT_NODE:
             o_node = dynamic_cast<Output_Node*>(node);
             o_node->compute_output();
             break;
-        case NODE:
+        default:
+            break;
+    }
+}
+
+void Neural_network::compute_node_gradient(int id_node) {
+    Node* node = &get_node(id_node);
+    Hidden_Node* h_node;
+    Output_Node* o_node;
+    switch (get_type(id_node)) {
+        case HIDDEN_NODE:
+            h_node = dynamic_cast<Hidden_Node*>(node);
+            h_node->compute_gradient();
+            break;
+        case OUTPUT_NODE:
+            o_node = dynamic_cast<Output_Node*>(node);
+            o_node->compute_gradient();
+            break;
+        default:
             break;
     }
 }
@@ -358,5 +419,10 @@ void Neural_network::print_output() const {
 
 void Neural_network::run() {
     Running_state rs(this);
+    rs.run();
+}
+
+void Neural_network::backpropagate() {
+    Reverse_State rs(this);
     rs.run();
 }

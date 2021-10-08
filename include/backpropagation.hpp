@@ -1,22 +1,23 @@
-#pragma once
 #include <queue>
 #include "neural_network.hpp"
 
-class Running_state {
-    private:
+
+class Reverse_State {
+    private: 
         Neural_network* nn;
         std::queue<int> active_nodes;
         int* nodes_left_to_activate;
+        Function cost_function;
 
-        void fill_active_nodes_with_input_nodes();
+        void fill_active_nodes_with_output_nodes();
         void scan_node(int);
+
     public:
-        Running_state(Neural_network*);
-        ~Running_state();
+        Reverse_State(Neural_network*);
+        ~Reverse_State();
+
         void print() const;
 
         void run();
-
-
 
 };
